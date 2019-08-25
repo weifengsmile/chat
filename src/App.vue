@@ -2,21 +2,17 @@
   <div id="app">
     <div class="container" :style="{ height: (screenHeight - 150) + 'px' }">
       <p>欢迎进入ele聊天系统</p>
-      <div class="dialogs">
-        <single-dialog name="ajinga" content="hello, world" position="left"/>
-        <single-dialog name="ajinga" content="hello, worldhello, worldhello, worldhello, worldhello, world" position="right"/>
-        <single-dialog name="ajinga" content="hello, world" position="left"/>
-        <single-dialog name="ajinga" content="hello, world" position="right"/>
-        <single-dialog name="ajinga" content="hello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, world" position="left"/>
-        <single-dialog name="ajinga" content="hello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, world" position="right"/>
-        <single-dialog name="ajinga" content="hello, world" position="left"/>
-        <single-dialog name="ajinga" content="hello, world" position="right"/>
-        <single-dialog name="ajinga" content="hello, world" position="left"/>
-        <single-dialog name="ajinga" content="hello, world" position="right"/>
-        <single-dialog name="ajinga" content="hello, world" position="left"/>
+      <div class="dialogs" :style="{ height: (screenHeight - 160) + 'px' }" ref="dialogRef">
+        <single-dialog v-for="(singleDialog, index) in dialogData.list" :key="'dialog' + index" :name="singleDialog.name" :content="singleDialog.content" :position="singleDialog.position" :time="singleDialog.time" :showTime="singleDialog.showTime"/>
       </div>
-      <div class="dialog-input"><dialog-input /></div>
-      <div class="buttons"><el-button type="info" size="medium" round class="send-button">发送</el-button></div>
+      <div class="bottom-container">
+        <div class="dialog-input"><dialog-input /></div>
+        <div class="buttons">
+          <el-button type="info" size="medium" round class="send-button" @click="sendMessage">发送</el-button>
+          <el-button type="info" size="medium" round class="send-button" @click="mockSend">模拟发送</el-button>
+        </div>
+      </div>
+      
     </div>
   </div>
 </template>
@@ -33,17 +29,97 @@ export default {
   },
   data() {
     return {
+      socketPath: "ws://127.0.0.1:9999/upper",
+      socket: "",
       screenHeight: window.screen.height,
       dialogInputHeight: 400,
-      time: 1566661442
+      latestTime: 0,
+      dialogData: {
+        list: []
+      },
+      inputValue: ""
     }
   },
   methods: {
+    sendMessage() {
+      this.mockSend()
+      this.send(this.inputValue)
+      window.EventBus.$emit('clearInput', "")
+    },
+    mockSend() {
+      // eslint-disable-next-line
+      console.log("clickkkkk")
+      let randNumber = Math.floor(Math.random()*10)
+      let position = randNumber > 10 ? "left" : "right"
 
+      this.dialogData.list.push(this.mockSingleData(position, this.inputValue))
+      this.$nextTick(() => {
+        this.$refs.dialogRef.scrollTop = this.$refs.dialogRef.scrollHeight
+      })
+    },
+    mockSingleData(position, content) {
+      let currentTime = (new Date()).valueOf()
+      let dialog = {
+        showTime: (currentTime - this.latestTime) > 10 * 1000,
+        position: position,
+        time: currentTime,
+        name: position == "left" ? "客服" : "",
+        content: content
+        // content: (randNumber % 2 == 0) ? "hello, world" : "hello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, worldhello, world"
+      }
+      this.latestTime = currentTime
+      // eslint-disable-next-line
+      return dialog
+    },
+    init() {
+      if(typeof(WebSocket) === "undefined"){
+        alert("您的浏览器不支持socket")
+      }else{
+        // 实例化socket
+        this.socket = new WebSocket(this.socketPath)
+        // 监听socket连接
+        this.socket.onopen = this.open
+        // 监听socket错误信息
+        this.socket.onerror = this.error
+        // 监听socket消息
+        this.socket.onmessage = this.getMessage
+      }
+    },
+    open() {
+      // eslint-disable-next-line
+      console.log("socket连接成功")
+    },
+    error() {
+      // eslint-disable-next-line
+      console.log("连接错误")
+    },
+    getMessage(msg) {
+      // eslint-disable-next-line
+      console.log(msg, msg.data)
+      let messageContent = msg.data
+      this.dialogData.list.push(this.mockSingleData("left", messageContent))
+      this.$nextTick(() => {
+        this.$refs.dialogRef.scrollTop = this.$refs.dialogRef.scrollHeight
+      })
+    },
+    send(params) {
+      // eslint-disable-next-line
+      this.socket.send(params)
+    },
+    close() {
+      // eslint-disable-next-line
+      console.log("socket已经关闭")
+    }
   },
   created() {
-    console.log(this.screenHeight)
-  }
+    this.dialogData.list.push(this.mockSingleData("left", "你好，有什么可以帮到您"))
+    window.EventBus.$on('inputChange', (data) => {
+      this.inputValue = data
+    })
+  },
+  mounted () {
+    this.init()
+  },
 }
 </script>
 
@@ -69,6 +145,9 @@ body {
   overflow-y:auto;
   padding: 20px 0;
   /* border: #2c3e50 1px solid; */
+}
+.bottom-container {
+  width: 100%;
 }
 .dialog-input {
   margin-top: 20px;

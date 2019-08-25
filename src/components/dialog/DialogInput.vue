@@ -4,6 +4,7 @@
       type="textarea"
       :rows="6"
       placeholder="请输入内容"
+      @change="changeInput"
       v-model="textarea">
     </el-input>
   </div>
@@ -21,8 +22,15 @@ export default {
       textarea: ""
     }
   },
+  methods: {
+    changeInput() {
+      window.EventBus.$emit('inputChange', this.textarea)
+    }
+  },
   created() {
-    
+    window.EventBus.$on('clearInput', () => {
+      this.textarea = ""
+    })
   }
 }
 </script>

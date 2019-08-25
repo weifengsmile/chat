@@ -1,5 +1,6 @@
 <template>
   <div class="single-container">
+    <div class="time" v-if="showTime">{{ timeDisplay }}</div>
     <div :class="['dialog-left', 'dialog']" v-if="positionIsLeft">
         <img class="avatar" src="../../assets/avatar.png" alt="">
         <div class="name-content">
@@ -21,11 +22,28 @@ export default {
     position: String,
     time: Number,
     name: String,
-    content: String
+    content: String,
+    showTime: Boolean
   },
   data() {
     return {
-      positionIsLeft: this.position == "left"
+      positionIsLeft: this.position == "left",
+      timeDisplay: this.timestamp2Time(this.time)
+    }
+  },
+  methods: {
+    timestamp2Time(timestamp) {
+      let date = new Date(timestamp)
+      let Y = date.getFullYear() + '-'
+      let monthNum = date.getMonth() + 1
+      let M = (monthNum < 10 ? ('0' + monthNum) : monthNum) + '-'
+      let dayNum = date.getDate()
+      let D = (dayNum < 10 ? ('0' + dayNum) : dayNum) + ' '
+      let hourNum = date.getHours()
+      let h = (hourNum < 10 ? ('0' + hourNum) : hourNum) + ':'
+      let minNum = date.getMinutes()
+      let m = (minNum < 10 ? ('0' + minNum) : minNum)
+      return `${Y}${M}${D}${h}${m}`
     }
   },
   created() {
@@ -79,5 +97,8 @@ export default {
   width: 30px;
   height: 30px;
   display: block;
+}
+.time {
+  height: 20px;
 }
 </style>
